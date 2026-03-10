@@ -1,0 +1,50 @@
+# =============================================================================
+# Agentify Container - Docker Compose
+# =============================================================================
+# Override ports, resources, etc. in docker-compose.override.yml
+# Include sub-services by adding them to the SUB_SERVICES env var
+# and creating their configs under ./services/<name>/docker-compose.yml
+
+services:
+  service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_PORT: ${SERVICE_PORT:-8800}
+    container_name: ${COMPOSE_PROJECT_NAME:-agentify}-service
+    restart: ${RESTART_POLICY:-unless-stopped}
+    ports:
+      - "${SERVICE_PORT:-8800}:8800"
+    volumes:
+      - ${DATA_VOLUME_NAME:-service-data}:/data
+      - ./config:/app/config:ro
+      # Docker socket: allows the container manager to start/stop sub-containers
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    env_file:
+      - .env
+    environment:
+      - SERVICE_PORT=${SERVICE_PORT:-8800}
+      - DATA_DIR=/data
+    deploy:
+      resources:
+        limits:
+          cpus: "${CPU_LIMIT:-2}"
+          memory: ${MEMORY_LIMIT:-4g}
+    networks:
+      - service-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${SERVICE_PORT:-8800}/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  service-data:
+    name: ${DATA_VOLUME_NAME:-service-data}
+
+networks:
+  service-network:
+    name: ${COMPOSE_PROJECT_NAME:-agentify}-network
+    driver: bridge
