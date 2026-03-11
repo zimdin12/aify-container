@@ -1,4 +1,4 @@
-# Agentify Container Template
+# Aify Container Template
 
 AI agent-friendly Docker service template with on-demand sub-container orchestration. The orchestrator manages Docker containers via the Docker SDK - starting them on first request, routing traffic, tracking GPU allocation, and auto-stopping after idle.
 
@@ -156,7 +156,7 @@ docker compose up -d --build && bash scripts/test-endpoints.sh
 ## Config Precedence
 
 ```
-COMPOSE_PROJECT_NAME in .env  ->  compose_project_name in service.json  ->  "agentify"
+COMPOSE_PROJECT_NAME in .env  ->  compose_project_name in service.json  ->  "aify"
 SERVICE_PORT in .env           ->  port in service.json                  ->  8800
 (env vars always win)
 ```

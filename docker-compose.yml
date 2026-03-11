@@ -1,5 +1,5 @@
 # =============================================================================
-# Agentify Container - Docker Compose
+# Aify Container - Docker Compose
 # =============================================================================
 # Override ports, resources, etc. in docker-compose.override.yml
 # Include sub-services by adding them to the SUB_SERVICES env var
@@ -12,7 +12,7 @@ services:
       dockerfile: Dockerfile
       args:
         SERVICE_PORT: ${SERVICE_PORT:-8800}
-    container_name: ${COMPOSE_PROJECT_NAME:-agentify}-service
+    container_name: ${COMPOSE_PROJECT_NAME:-aify}-service
     restart: ${RESTART_POLICY:-unless-stopped}
     ports:
       - "${SERVICE_PORT:-8800}:8800"
@@ -46,5 +46,5 @@ volumes:
 
 networks:
   service-network:
-    name: ${COMPOSE_PROJECT_NAME:-agentify}-network
+    name: ${COMPOSE_PROJECT_NAME:-aify}-network
     driver: bridge

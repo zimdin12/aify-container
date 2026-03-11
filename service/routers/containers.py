@@ -160,8 +160,8 @@ async def route_request(name: str, path: str, request: Request):
         raise HTTPException(503, f"Container '{actual_name}' is {actual_state.status.value}")
 
     # Update idle tracker
-    from datetime import datetime
-    actual_state.last_request_at = datetime.utcnow()
+    from datetime import datetime, timezone
+    actual_state.last_request_at = datetime.now(timezone.utc)
 
     # Proxy the request
     target_url = f"{actual_state.internal_url}/{path}"

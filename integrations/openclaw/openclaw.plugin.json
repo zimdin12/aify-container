@@ -1,7 +1,7 @@
 {
-  "id": "agentify-service",
+  "id": "aify-service",
   "name": "Agentify Service",
-  "description": "Integration with the agentify container service",
+  "description": "Integration with the aify container service",
   "version": "0.1.0",
   "config": {
     "apiUrl": {

@@ -1,4 +1,4 @@
-# Agentify Container
+# Aify Container
 
 A boilerplate for building AI agent-friendly Docker services with on-demand sub-container orchestration.
 
@@ -7,8 +7,8 @@ Services built on this template are automatically accessible to AI agents via RE
 ## Quick Start
 
 ```bash
-git clone https://github.com/zimdin12/agentify-container.git
-cd agentify-container
+git clone https://github.com/zimdin12/aify-container.git
+cd aify-container
 bash setup.sh          # Copies config templates
 
 # Edit .env (ports, project name, resources)
