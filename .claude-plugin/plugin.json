@@ -1,0 +1,40 @@
+{
+  "name": "aify-service",
+  "description": "AI agent-friendly Docker service template with sub-container orchestration, GPU management, and multi-platform MCP support.",
+  "version": "1.0.0",
+  "author": {
+    "name": "zimdin12"
+  },
+  "homepage": "https://github.com/zimdin12/aify-container",
+  "license": "MIT",
+  "keywords": ["aify", "mcp", "docker", "agent", "orchestration", "gpu"],
+  "mcp": {
+    "stdio": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/stdio/server.js"],
+      "env": {
+        "SERVICE_API_URL": "${SERVICE_API_URL:-http://localhost:8800}"
+      }
+    },
+    "sse": {
+      "url": "${SERVICE_API_URL:-http://localhost:8800}/mcp/sse"
+    }
+  },
+  "setup": {
+    "npm": {
+      "path": "mcp/stdio",
+      "install": true
+    },
+    "docker": {
+      "optional": false,
+      "compose": "docker-compose.yml"
+    }
+  },
+  "env": {
+    "SERVICE_API_URL": {
+      "description": "Service API URL",
+      "required": false,
+      "default": "http://localhost:8800"
+    }
+  }
+}

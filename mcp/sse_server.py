@@ -29,10 +29,7 @@ client_name_var: ContextVar[str] = ContextVar("client_name", default="unknown")
 
 # Create MCP server instance
 config = get_config()
-mcp_server = FastMCP(
-    config.name,
-    description=config.description,
-)
+mcp_server = FastMCP(config.name)
 
 # Reference to the FastAPI app (set during setup)
 _app = None
@@ -150,8 +147,55 @@ async def container_logs(name: str, tail: int = 50) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Internal API helper — SSE tools can call the local HTTP API
+# ---------------------------------------------------------------------------
+
+_BASE_URL = None
+
+def _api_url():
+    global _BASE_URL
+    if _BASE_URL is None:
+        cfg = get_config()
+        _BASE_URL = f"http://127.0.0.1:{cfg.port}/api/v1"
+    return _BASE_URL
+
+async def _api(method: str, path: str, json_data: dict = None, params: dict = None) -> dict:
+    """Call the internal REST API. Use this to expose REST endpoints as MCP tools."""
+    url = f"{_api_url()}{path}"
+    headers = {}
+    cfg = get_config()
+    if cfg.api_key:
+        headers["X-API-Key"] = cfg.api_key
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        if method == "GET":
+            resp = await client.get(url, headers=headers, params=params)
+        elif method == "POST":
+            resp = await client.post(url, headers=headers, json=json_data)
+        elif method == "DELETE":
+            resp = await client.delete(url, headers=headers, params=params)
+        else:
+            return {"error": f"Unknown method: {method}"}
+        try:
+            return resp.json()
+        except Exception:
+            return {"status": resp.status_code, "text": resp.text[:500]}
+
+
+# ---------------------------------------------------------------------------
 # TODO: Add your service-specific tools below
 # ---------------------------------------------------------------------------
+#
+# Use the _api() helper to expose your REST endpoints as MCP tools:
+#
+# @mcp_server.tool()
+# async def my_tool(param: str) -> str:
+#     """Description of what this tool does."""
+#     r = await _api("POST", "/my-endpoint", {"param": param})
+#     if "detail" in r:
+#         return f"Error: {r['detail']}"
+#     return f"Result: {r.get('result', 'done')}"
+#
+# Or call containers directly:
 #
 # @mcp_server.tool()
 # async def generate_text(prompt: str, max_tokens: int = 512, container: str = "qwen") -> str:

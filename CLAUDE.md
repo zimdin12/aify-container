@@ -164,6 +164,40 @@ SERVICE_PORT in .env           ->  port in service.json                  ->  880
 `.env` = deployment (ports, resources, credentials, project name)
 `service.json` = service definition (containers, custom settings)
 
+## Plugin & MCP Distribution
+
+This template includes multi-platform MCP support out of the box:
+
+### Claude Code Plugin
+`.claude-plugin/plugin.json` — marketplace-compatible manifest. Install with:
+```bash
+bash install.sh                     # Default localhost:8800
+bash install.sh http://server:8800  # Custom URL
+```
+
+### SSE Transport (any MCP client)
+The SSE server at `/mcp/sse` works with any MCP-compatible client:
+- Claude Code: `claude mcp add --transport sse http://server:8800/mcp/sse`
+- OpenCode, Cursor, etc.: Connect to `http://server:8800/mcp/sse`
+
+### Adding MCP Tools for Your Service
+In `mcp/sse_server.py`, use the `_api()` helper to expose REST endpoints as MCP tools:
+```python
+@mcp_server.tool()
+async def my_tool(param: str) -> str:
+    """What this tool does."""
+    r = await _api("POST", "/my-endpoint", {"param": param})
+    return f"Result: {r.get('result', 'done')}"
+```
+
+This automatically makes your tools available via both SSE and stdio transports.
+
+## Security
+
+- **API key**: Set `API_KEY` in `.env`. Enforced via middleware with timing-safe comparison.
+- **Input validation**: Always validate user-supplied identifiers used in filesystem paths.
+- **CORS**: Default `["*"]` — restrict in production via `CORS_ORIGINS` env var.
+
 ## Conventions
 
 - Persistent data in `/data` (named volume) or per-container named volumes

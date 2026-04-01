@@ -20,6 +20,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from service.config import get_config
 from service.routers import health, api, containers as containers_router
 
+import hmac
+from starlette.middleware.base import BaseHTTPMiddleware
+
+
+class APIKeyMiddleware(BaseHTTPMiddleware):
+    """Enforces API key auth when API_KEY is set in .env."""
+
+    SKIP_PATHS = {"/health", "/ready", "/info", "/docs", "/redoc", "/openapi.json"}
+
+    def __init__(self, app, api_key: str):
+        super().__init__(app)
+        self.api_key = api_key
+
+    async def dispatch(self, request, call_next):
+        if request.url.path in self.SKIP_PATHS or request.url.path.startswith("/docs"):
+            return await call_next(request)
+        provided_key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+        if not provided_key or not hmac.compare_digest(provided_key, self.api_key):
+            from starlette.responses import JSONResponse
+            return JSONResponse({"detail": "Invalid or missing API key"}, status_code=401)
+        return await call_next(request)
+
 
 def _setup_logging(config):
     """Configure logging based on config."""
@@ -68,9 +90,16 @@ async def lifespan(app: FastAPI):
 
     # Mount MCP server if enabled
     if config.mcp_enabled:
-        from mcp.sse_server import setup_mcp_server
-        setup_mcp_server(app)
-        logger.info(f"MCP SSE at {config.mcp_path_prefix}/sse")
+        try:
+            import importlib.util
+            _sse_path = Path(__file__).resolve().parent.parent / "mcp" / "sse_server.py"
+            _spec = importlib.util.spec_from_file_location("sse_server", _sse_path)
+            _mod = importlib.util.module_from_spec(_spec)
+            _spec.loader.exec_module(_mod)
+            _mod.setup_mcp_server(app)
+            logger.info(f"MCP SSE at {config.mcp_path_prefix}/sse")
+        except Exception as e:
+            logger.info(f"MCP SSE server not available: {e}")
 
     yield
 
@@ -102,9 +131,21 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # API key auth — only enforced when API_KEY is set in .env
+    if config.api_key:
+        app.add_middleware(APIKeyMiddleware, api_key=config.api_key)
+        logger.info("API key auth enabled")
+
     app.include_router(health.router)
     app.include_router(api.router, prefix="/api/v1")
     app.include_router(containers_router.router)
+
+    # Redirect root to dashboard or docs
+    from fastapi.responses import RedirectResponse
+
+    @app.get("/", include_in_schema=False)
+    async def root_redirect():
+        return RedirectResponse(url="/docs")
 
     return app
 
