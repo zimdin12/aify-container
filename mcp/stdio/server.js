@@ -17,6 +17,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { loadSettingsEnv } from "./load-env.js";
+
+// Load env from settings.local.json (user-level + project-level merge)
+loadSettingsEnv();
 
 const API_URL = process.env.SERVICE_API_URL || "http://localhost:8800";
 
